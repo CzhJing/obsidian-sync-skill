@@ -110,12 +110,12 @@ mkdir -p "$VAULT_PATH/00-09 System" \
 | 层级 | 说明 | 选项 A | 选项 B |
 |------|------|--------|--------|
 | 1. 项目（Project） | 顶层，对应整个代码仓库 | ✅ | ✅ |
-| 2. 模块（Module） | 从项目架构提取（如用户模块、订单模块） | ✅ | ✅ |
-| 3. 服务（Service） | 从核心文件提取（如用户服务、权限服务） | ✅ | ✅ |
-| 4. 外部 API | HTTP client / Feign / Forest 调用的外部服务 | ✅ | ✅ |
-| 5. 类/接口 | Controller、Service、DAO 层文件 | ❌ | ✅ |
-| 6. 方法 | 类/接口的核心方法 | ❌ | ✅ |
-| 7. 表 | DAO 层使用的数据库表 | ❌ | ✅ |
+| 2. 模块（Module） | 业务模块分组（如用户模块、订单模块） | ✅ | ✅ |
+| 3. 子系统（Subsystem） | 模块内的功能分区，对应一组协作的代码单元（如订单查询、订单履约、退款） | ✅ | ✅ |
+| 4. 外部依赖（External） | 调用的外部服务或第三方库（如 HTTP client、RPC、SDK、包引用） | ✅ | ✅ |
+| 5. 代码单元（Unit） | 语言中承载逻辑的核心结构。例如：Java/Kotlin/C# 的 Class/Interface；Python/JS/TS 的 Module/Class；Go 的 Struct/Package；Rust 的 Struct/Trait；C/C++ 的 .h/.c 文件 | ❌ | ✅ |
+| 6. 方法（Method） | 代码单元中的核心函数或方法。例如：Java 的 method；Python/JS 的 function/def；Go 的 func；Rust 的 fn | ❌ | ✅ |
+| 7. 数据存储（Storage） | 持久化相关结构。例如：关系型数据库的表；NoSQL 的 Collection/Document；Redis 的 Key 结构；文件存储的 Schema | ❌ | ✅ |
 
 **同时提取：**
 - 每个层级的上下级关联关系（用于生成双向 wikiLink）

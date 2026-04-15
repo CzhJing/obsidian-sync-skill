@@ -20,9 +20,12 @@ project → module → service → external API → class/interface → method �
 
 Each layer becomes a standalone Markdown file with Obsidian wikiLinks, forming a browsable, locally-stored architecture graph in your Vault.
 
+![效果](preview.png)
+
 ### Why This Saves Tokens & Context
 
 - **Precision retrieval** — The model navigates the graph hierarchy instead of scanning the entire codebase, locating target files in seconds.
+- **On-demand loading** — Reduces exploratory reads without replacing source code. It acts as an index/table of contents, allowing the model to pinpoint exactly what it needs.
 - **Focused context** — Only the relevant node summaries are loaded into the conversation, cutting token usage dramatically.
 - **Persistent memory** — Architecture, design decisions, and dev logs are stored structurally and reused across sessions without repetition.
 - **Fully local & private** — All graph data stays in your local Obsidian Vault. Zero cloud upload. Zero leakage risk.
@@ -30,6 +33,10 @@ Each layer becomes a standalone Markdown file with Obsidian wikiLinks, forming a
 ---
 
 ## Installation
+
+```bash
+Obsidian client must be installed before using this skill.
+```
 
 ### Claude Code — Plugin Marketplace
 
@@ -126,58 +133,36 @@ This is the simplest way — no extra setup required.
 If you want the "graph first, source code second" rule to apply **automatically** without typing `/obsidian-sync` each time, create a file named `.claude/CLAUDE.md` in your project root and paste the following content into it:
 
 ````markdown
-# Project Development Workflow — Read Obsidian Architecture Graph First
+## Obsidian Architecture Graph — Priority Strategy
 
-> Place this file at `.claude/CLAUDE.md` in your project root. Claude Code will auto-load it in every session.
+VAULT_PATH = "{Your Vault absolute path}"
 
----
-
-## Core Principle: Graph First, Source Code Second
-
-Before handling any of the following request types, **do not grep/read source code directly**. Always read the Obsidian architecture documents first to gather context, then decide whether to read specific source files:
-
+When the user makes any of the following requests, always read from the Obsidian architecture documents first to establish context, before deciding whether to read specific source files:
 - Implementing new features / adding interfaces / developing modules
 - Fixing bugs / troubleshooting issues
-- Refactoring code / optimizing performance
+- Refactoring / optimizing performance
 - Explaining how a module, class, or method works
 - Writing test cases
 
----
+### Reading Order (Strict)
 
-## Reading Order (Strict)
+1. Match the last segment of `cwd` against `NN {project-name}` folders under `VAULT_PATH/10-19 Projects/`
+2. Verify that the `Location` field in `NN.00 {project-name}.md` matches `cwd`
+3. Read the top-level file to get tech stack, module list, and core file mapping
+4. Use keywords from the user's request to locate the relevant module, then read the corresponding MD file
+5. When `type` is `B-File-Level Detail`, drill down to class/method level as needed
+6. Only then use `Grep` / `Glob` / `Read` to read source code
 
-1. **Locate the project directory**
-   Match the last segment of `cwd` against the `NN {project-name}` folders under `VAULT_PATH/10-19 Projects/`.
-   Verify that the `**Location:**` field in the top-level file `NN.00 {project-name}.md` matches `cwd`.
+### Fallback Strategy
 
-2. **Read the top-level project file**
-   `Read → VAULT_PATH/10-19 Projects/NN {project-name}/NN.00 {project-name}.md`
-   Focus on: tech stack, module list (`## Hierarchy`), and core file mapping (`## Core Files`).
+- No matching project found → prompt the user to run `/obsidian-sync` first
+- Project found but module MD missing → inform the user and read source code directly
 
-3. **Locate the relevant module/service based on the user's request**
-   Use keywords from the user's message (e.g. "cart", "order", "user") to find the matching wikiLink in the top-level file's `## Hierarchy`, then read that module/service MD file.
-   Example: user says "batch delete shopping cart" → read `NN.MM cart-service.md` → then `NN.MM.SS CartService.md`.
+### Key Principles
 
-4. **Drill down to class/method level only when type is B-file-level-detail**
-   If the project granularity is `B-文件级细节` and the user's question is specific enough, continue reading the relevant class/interface/method MD files (e.g. `NN.MM.SS.CC CartController.md`).
-
-5. **Read source code last**
-   Only after understanding the architecture context should you use `Grep` / `Glob` / `Read` on actual source code files.
-
----
-
-## Fallback Strategy
-
-- If **no matching project** is found under `10-19 Projects/`, prompt the user: "This project has not yet been synced to Obsidian. Would you like to run /obsidian-sync to generate the architecture graph first?"
-- If the project is found but the relevant module MD file does not exist, fall back to the normal code-reading flow and inform the user: "Obsidian documentation for {module-name} was not found; reading source code directly."
-
----
-
-## Key Constraints
-
-- **Only read active files**: Check YAML `status: active` before reading; skip files with `deleted` status.
-- **Use wikiLinks for navigation**: The `[[NN.MM.SS {name}]]` links in child-level files indicate the next file to read — parse and read them directly.
-- **VAULT_PATH placeholder**: Before first use, replace `VAULT_PATH` in this file with your actual Obsidian Vault absolute path (e.g. `/Users/yourname/Documents/obsidian`).
+- Only read files with `status: active`; skip files with `deleted` status
+- A wikiLink `[[NN.MM.SS name]]` is the filename of the next layer to read — parse and follow it directly
+- Build global awareness from the graph first to avoid blind searching through the codebase
 ````
 
 > **Remember:** Replace `VAULT_PATH` with your actual Obsidian Vault absolute path (e.g. `/Users/yourname/Documents/obsidian`).
