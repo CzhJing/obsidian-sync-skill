@@ -41,7 +41,6 @@ Obsidian client must be installed before using this skill.
 ### Claude Code — Plugin Marketplace
 
 ```bash
-# If this skill is published to a marketplace
 claude plugin marketplace add CzhJing/obsidian-sync-skill
 claude plugin install obsidian-sync@obsidian-sync-skill
 ```
