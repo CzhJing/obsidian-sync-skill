@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "obsidian-sync",
-      "source": ".claude-plugin/",
+      "source": "./",
       "skills": [
         "./skills/obsidian-sync/"
       ],
