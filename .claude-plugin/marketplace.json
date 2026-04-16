@@ -10,6 +10,10 @@
     {
       "name": "obsidian-sync",
       "source": ".claude-plugin/",
+      "skills": [
+        "./skills/obsidian-sync/"
+      ],
+      "hooks": "./hooks/hook.json",
       "description": "Obsidian 同步助手 — 自动分析项目代码库，拆分生成 project → 模块 → 服务 → 外部API → 类(接口) → 方法 → 表 层级结构，每个层级单独 MD 文件，自动添加双向链接，创建本地项目架构图谱",
       "version": "1.2.0",
       "author": {
@@ -33,7 +37,7 @@
         "knowledge-graph",
         "architecture"
       ],
-      "strict": false
+      "strict": true
     }
   ]
 }

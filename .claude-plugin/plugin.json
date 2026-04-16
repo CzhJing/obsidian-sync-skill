@@ -14,9 +14,5 @@
     "code-analysis",
     "wikilink",
     "architecture"
-  ],
-  "skills": [
-    "./skills/obsidian-sync/"
-  ],
-  "hooks": "./hooks/hook.json"
+  ]
 }
