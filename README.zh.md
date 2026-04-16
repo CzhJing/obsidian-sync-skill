@@ -41,7 +41,7 @@
 
 ```bash
 /plugin marketplace add CzhJing/obsidian-sync-skill
-/plugin install obsidian-sync@obsidian-sync-skill
+/plugin install obsidian-sync@obsidian-sync
 ```
 
 ---
