@@ -40,54 +40,8 @@
 ### Claude Code — Plugin Marketplace
 
 ```bash
-claude plugin marketplace add CzhJing/obsidian-sync-skill
-claude plugin install obsidian-sync@obsidian-sync-skill
-```
-
-### Claude Code — 本地插件安装
-
-```bash
-git clone https://github.com/CzhJing/obsidian-sync-skill.git
-cd obsidian-sync-skill
-claude plugin install .
-```
-
-### Claude Code — 手动复制到 skills 目录
-
-将 skill 复制到 Claude Code 的 skills 目录：
-
-```bash
-# 项目级：放在当前项目内
-mkdir -p .claude/skills
-cp -r skills/obsidian-sync .claude/skills/
-
-# 或用户级：~/.claude/skills/
-ln -s $(pwd)/skills/obsidian-sync ~/.claude/skills/obsidian-sync
-```
-
-### Codex CLI
-
-将 `skills/` 目录复制到 Codex skills 路径：
-
-```bash
-mkdir -p ~/.codex/skills
-cp -r skills/obsidian-sync ~/.codex/skills/
-```
-
-### OpenCode
-
-将完整仓库克隆到 OpenCode skills 目录（**不要**只复制内部的 `skills/` 文件夹）：
-
-```bash
-git clone https://github.com/CzhJing/obsidian-sync-skill.git ~/.opencode/skills/obsidian-sync-skill
-```
-
-OpenCode 会自动发现 `~/.opencode/skills/` 下的所有 `SKILL.md` 文件。重启 OpenCode 后即可使用。
-
-### npx skills
-
-```bash
-npx skills add git@github.com:CzhJing/obsidian-sync-skill.git
+/plugin marketplace add CzhJing/obsidian-sync-skill
+/plugin install obsidian-sync@obsidian-sync-skill
 ```
 
 ---
@@ -112,64 +66,16 @@ npx skills add git@github.com:CzhJing/obsidian-sync-skill.git
 
 ---
 
-## 使用
+## 使用自动加载（项目级）
 
-本 Skill 提供**两种方式**使用，选择适合你工作流的一种：
-
-### 方式 A：按需触发（手动）
-
-每次需要 Agent 先读取 Obsidian 架构图谱时，在消息开头加上 `/obsidian-sync`。例如：
-
-```
-/obsidian-sync 实现购物车批量删除功能
-/obsidian-sync 修复用户登录的 bug
-/obsidian-sync 帮我写 OrderService 的单元测试
-```
-
-这种方式最简单，无需额外配置。
-
-### 方式 B：自动加载（项目级）
-
-如果你希望**每次对话都自动**遵循"先图谱、后源码"的规则，而不需要每次都手动输入 `/obsidian-sync`，请在项目根目录创建 `.claude/CLAUDE.md`，并将以下内容粘贴进去：
+如果你希望**每次对话都自动**遵循"先图谱、后源码"的规则，请在项目根目录创建 `.claude/CLAUDE.md`，并将以下内容粘贴进去：
 
 ````markdown
-## Obsidian 架构图谱优先策略
+## Obsidian Hook 输出处理
 
-VAULT_PATH = "{你的 Vault 绝对路径}"
-
-当用户提出以下任何请求时，必须优先从 Obsidian 架构文档获取上下文，
-再决定是否读取具体代码文件：
-- 实现新功能 / 添加接口 / 开发模块
-- 修复 Bug / 排查问题
-- 重构 / 优化性能
-- 解释某个模块、类或方法的工作原理
-- 编写测试用例
-
-### 读取顺序（严格遵循）
-
-1. 用 cwd 最后一级目录名，匹配
-   VAULT_PATH/10-19 Projects/ 下的 NN {项目名} 文件夹
-2. 验证 NN.00 {项目名}.md 的 Location 字段与 cwd 一致
-3. 读取顶层文件，获取技术栈、模块列表、核心文件映射
-4. 根据用户关键词定位相关模块，读取对应 MD 文件
-5. type 为 B-文件级细节 时，按需下钻到类/方法层级
-6. 最后才用 Grep/Glob/Read 读取源码
-
-### 回退策略
-
-- 未找到匹配项目 → 提示用户先执行 /obsidian-sync
-- 找到项目但模块 MD 不存在 → 告知用户后直接读源码
-
-### 关键原则
-
-- 只读 status: active 的文件，跳过 deleted 状态
-- wikiLink [[NN.MM.SS 名称]] 即下一层需读取的文件名，直接解析
-- 先图谱建立全局认知，避免在代码库中盲目搜索
+当工具调用前看到 `[Obsidian Context]` 开头的输出时，
+优先将其作为当前任务的架构上下文，再执行搜索或代码操作。
 ````
-
-> **注意：** 粘贴后，将 `VAULT_PATH` 替换为你实际的 Obsidian Vault 绝对路径（例如 `/Users/yourname/Documents/obsidian`）。
->
-> 放置该文件后，Claude Code 会在**该项目每次会话中自动加载**它。
 
 ---
 

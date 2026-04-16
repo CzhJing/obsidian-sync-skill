@@ -105,17 +105,48 @@ mkdir -p "$VAULT_PATH/00-09 System" \
 
 ### 阶段 4：层级提取规则
 
-根据阶段 3 用户选择，提取以下层级，每层生成独立 MD 文件。**文件命名、模板格式参见 @obsidian-sync-spec。**
+根据阶段 3 用户选择，扫描分析整个项目，并生成一个**代码知识图谱（Obsidian风格）**。**文件命名、模板格式参见 @obsidian-sync-spec。**
 
-| 层级 | 说明 | 选项 A | 选项 B |
-|------|------|--------|--------|
-| 1. 项目（Project） | 顶层，对应整个代码仓库 | ✅ | ✅ |
-| 2. 模块（Module） | 业务模块分组（如用户模块、订单模块） | ✅ | ✅ |
-| 3. 子系统（Subsystem） | 模块内的功能分区，对应一组协作的代码单元（如订单查询、订单履约、退款） | ✅ | ✅ |
-| 4. 外部依赖（External） | 调用的外部服务或第三方库（如 HTTP client、RPC、SDK、包引用） | ✅ | ✅ |
-| 5. 代码单元（Unit） | 语言中承载逻辑的核心结构。例如：Java/Kotlin/C# 的 Class/Interface；Python/JS/TS 的 Module/Class；Go 的 Struct/Package；Rust 的 Struct/Trait；C/C++ 的 .h/.c 文件 | ❌ | ✅ |
-| 6. 方法（Method） | 代码单元中的核心函数或方法。例如：Java 的 method；Python/JS 的 function/def；Go 的 func；Rust 的 fn | ❌ | ✅ |
-| 7. 数据存储（Storage） | 持久化相关结构。例如：关系型数据库的表；NoSQL 的 Collection/Document；Redis 的 Key 结构；文件存储的 Schema | ❌ | ✅ |
+**粒度必须严格遵循以下规则：**
+
+【节点类型】
+- Repository
+- Directory / Module
+- File
+- Class
+- Interface
+- Function
+- Method
+- Variable / Constant
+- Enum / TypeAlias
+- Table
+- Endpoint（若可推导）
+- TestCase（若可推导）
+- ConfigRation
+
+【节点关系类型】:节点关系不生成md文件，只定义节点之间关联关系，通过[[wikiLink]]连接相关的节点
+- CONTAINS
+- DECLARES
+- EXPORTS
+- IMPORTS
+- CALLS
+- EXTENDS
+- IMPLEMENTS
+- USES_TYPE
+- RETURNS
+- INSTANTIATES
+- REFERENCES
+- TESTS
+
+【抽取规则】
+- 如果是{选项 A：高层系统}，节点的级别是：Repository 、Directory / Module
+- 如果是{选项 B：文件级细节}，节点的级别是：所有节点类型，每个 Function / Method 必须单独成节点，每个函数调用必须建立 CALLS 关系，使用[[wikiLink]]链接
+- 文件必须拆到 Symbol 级，不允许仅停留在文件级
+- 每个 Import 必须建立 IMPORTS 关系，使用[[wikiLink]]链接
+- 类继承/接口实现必须建立 EXTENDS / IMPLEMENTS 关系，使用[[wikiLink]]链接
+- 构造实例必须建立 INSTANTIATES 关系，使用[[wikiLink]]链接
+- 类型引用必须建立 USES_TYPE 关系，使用[[wikiLink]]链接
+- 输出 Obsidian 格式,配套规范参考@obsidian-sync-spec 
 
 **同时提取：**
 - 每个层级的上下级关联关系（用于生成双向 wikiLink）
@@ -137,8 +168,7 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 ---
 
 #### 动作 A：创建新项目文件（首次同步）
-
-1. **分配 JD 编号**：扫描 `VAULT_PATH/10-19 Projects/` 下所有 `NN **` 文件夹，取最大 `NN` 后递增 1。子层级编号同理，逐层递增。
+1. **分配 JD 编号**：按 @obsidian-sync-spec 命名规范分配（扫描同层级最大编号后递增 1）。
 
 2. **生成顶层文件**：路径 `VAULT_PATH/10-19 Projects/NN {项目名}/NN.00 {项目名}.md`，使用 @obsidian-sync-spec 中的**顶层文件模板**。
 
@@ -149,7 +179,7 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 ---
 
 #### 动作 B：更新描述与技术栈
-
+##### 触发指令 /obsidian-sync:update-project
 1. 重新分析代码库（`package.json`、`pom.xml`、`build.gradle`、目录结构等）
 2. 更新顶层 `NN.00 {项目名}.md` 中：
     - `desc` 字段与描述段落
@@ -162,7 +192,7 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 ---
 
 #### 动作 C：添加开发日志
-
+##### 触发指令 /obsidian-sync:log
 1. **日志文件**：`VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog/NN.01 DailyLog.md`
     - 已存在则直接更新，不存在则新建
     - **首次创建后**，在顶层文件 `## 核心文件` 章节后追加：
@@ -176,36 +206,85 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
     - 当前会话中讨论、调试、决策的内容
     - 按功能模块归类，重点说明"为什么"而非只记录"改了什么"
 
-3. **插入规则**：
-    - 最新日志插入在所有已有 `## Dev Log` 之前
-    - 当天已有日志则合并，不新建重复日期
-    - 严禁删除或修改历史日志
-
-4. **日志格式**参见 @obsidian-sync-spec 中的**日志格式模板**。
+3. **日志格式与插入规则**参见 @obsidian-sync-spec 第五节「日志格式模板」。
 
 ---
 
 #### 动作 D：更新项目仓库
+##### 触发指令 /obsidian-sync:update
+##### 执行前准备（必须完成，再进入后续步骤）
 
-1. 执行 `git log --oneline --since="00:00" --author="{用户名}"` 获取今日提交
-2. 分析识别新增、修改、删除了哪些文件
-3. 按粒度选项更新：
-    - **选项 A**：仅更新项目 → 模块 → 服务 → 外部 API 四层
-    - **选项 B**：按变更创建、更新或归档所有层级 MD 文件
-4. **代码文件已删除时**：
-    - 不直接删除对应 MD 文件
-    - YAML `status` 改为 `deleted`
-    - 移入 `VAULT_PATH/10-19 Projects/NN {项目名}/02 Delete/`
-    - 文件顶部（YAML 下方）添加：
-      ```
-      > ⚠️ 此文件对应的源代码已于 {YYYY-MM-DD} 删除，当前状态：已归档
-      ```
-    - 实际永久删除需用户手动确认
-5. 每次写入前展示 diff，请求用户确认
+**第一步：读取同步粒度**
+
+读取 `VAULT_PATH/10-19 Projects/NN {项目名}/NN.00 {项目名}.md` 的 YAML `type` 字段：
+
+| type 值 | 对应规则 | 更新范围 |
+|---------|---------|---------|
+| `A-高层系统` | 阶段 4 选项 A | 仅处理层级 1–4（项目 → 模块 → 子系统 → 外部依赖） |
+| `B-文件级细节` | 阶段 4 选项 B | 处理全部层级 1–7 |
+
+> **异常处理：**
+> - 文件不存在 → 停止执行，提示用户先运行动作 A 完成首次同步
+> - `type` 字段缺失或值不合法 → 询问用户确认当前粒度后继续
+
+**第二步：选择更新来源**
+
+询问用户：
+
+| 选项 | 说明 | 适用场景 |
+|------|------|---------|
+| 1. Git 变更分析 | 从今日 git 提交记录识别变更 | 有规律提交习惯，想精确追踪每次改动 |
+| 2. 全量文件比对 | 扫描代码库与 Obsidian 现有文档做差异比对 | 长期未同步、跨多天改动、无 git 提交记录 |
 
 ---
 
-### 阶段 6：结果汇报
+##### 来源 1：Git 变更分析
+
+1. 执行 `git log --oneline --since="00:00" --author="{用户名}"` 获取今日提交
+2. 分析识别新增、修改、删除了哪些文件
+3. 将变更文件映射到对应层级，进入**差异处理流程**
+
+---
+
+##### 来源 2：全量文件比对
+
+1. **扫描代码库**，按阶段 4 的层级提取规则，重新识别当前项目的完整层级结构（模块 → 子系统 → 外部依赖 → 代码单元 → 方法 → 存储）
+2. **扫描 Obsidian 现有文档**，读取 `VAULT_PATH/10-19 Projects/NN {项目名}/` 下所有 `status: active` 的 MD 文件，提取其 `jd-id`、`name`、`**Location:**` 字段，构建已有文档清单
+3. **三向比对**，识别以下三类差异：
+
+| 差异类型 | 判定条件 | 处理方式 |
+|----------|---------|---------|
+| 新增 | 代码库中存在，Obsidian 中无对应 MD | 按规范创建新 MD 文件 |
+| 变更 | MD 文件存在，但 `desc`/`tags`/层级结构与代码库不一致 | 更新对应字段 |
+| 删除 | Obsidian 中有 MD，但代码库中已无对应文件或结构 | 归档处理（见下方） |
+
+4. 输出比对结果清单，格式如下，请求用户确认后再执行：
+
+```markdown
+比对结果
+新增（N 个）：
+- [ ] NN.MM.SS {名称}（新增代码单元）
+
+变更（N 个）：
+- [ ] NN.MM {名称}（desc 已变更 / 新增子层级）
+
+待归档（N 个）：
+- [ ] NN.MM.SS {名称}（源文件已不存在）
+```
+
+##### 差异处理流程（两种来源共用）
+
+按粒度选项更新：
+- **选项 A**：仅处理项目 → 模块 → 子系统 → 外部依赖四层的差异
+- **选项 B**：处理所有层级的差异
+
+**代码文件已删除 / 结构已移除时：** 参见 @obsidian-sync-spec 第八节「删除归档规范」。
+
+每次写入前展示 diff，请求用户确认后执行。
+
+---
+
+## 阶段 6：结果汇报
 
 ```
 ## Obsidian 同步完成
@@ -225,7 +304,7 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 - ...（完整列表）
 
 **需要手动处理的事项：**
-- {已移入 02 Delete/ 的归档文件列表}
+- {已移入 02 Delete/ 的归档文件}
 - {其他需人工介入的事项}
 ```
 

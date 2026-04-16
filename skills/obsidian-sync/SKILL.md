@@ -4,7 +4,13 @@ description: Obsidian 同步助手，连接 Agent 与 Obsidian，自动分析项
 ---
 
 ## 触发指令
-/obsidian-sync
+
+| 指令 | 说明 |
+|------|------|
+| `/obsidian-sync` | 首次同步 / 主入口（等同于 init） |
+| `/obsidian-sync:update-project` | 更新描述与技术栈 |
+| `/obsidian-sync:log` | 添加开发日志 |
+| `/obsidian-sync:update` | 更新项目仓库（增量同步）|
 
 ## 参考文件说明
 执行本技能时，**自动加载以下参考文件**并严格遵循：

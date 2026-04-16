@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/skills/obsidian-sync/hooks/obsidian-sync-hook.cjs",
+            "timeout": 10000,
+            "statusMessage": "Loading Obsidian graph context..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/skills/obsidian-sync/hooks/obsidian-sync-hook.cjs",
+            "timeout": 10000,
+            "statusMessage": "Checking Obsidian wiki freshness..."
+          }
+        ]
+      }
+    ]
+  }
+}
