@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/skills/obsidian-sync/hooks/obsidian-sync-hook.cjs",
+            "command": "node ~/.claude/skills/obsidian-sync/scripts/obsidian-sync-hook.cjs",
             "timeout": 10000,
             "statusMessage": "Loading Obsidian graph context..."
           }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/skills/obsidian-sync/hooks/obsidian-sync-hook.cjs",
+            "command": "node ~/.claude/skills/obsidian-sync/scripts/obsidian-sync-hook.cjs",
             "timeout": 10000,
             "statusMessage": "Checking Obsidian wiki freshness..."
           }
