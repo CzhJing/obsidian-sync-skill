@@ -92,11 +92,11 @@ mkdir -p "$VAULT_PATH/00-09 System" \
 **如果未找到项目文件，询问架构图谱细节粒度：**
 
 - **选项 A：高层系统（15–40 个节点）**
-  生成层级：项目 → 模块 → 服务 → 外部 API
+  生成层级：Repository 、Directory / Module；例如:项目 → 模块 → 服务 → 外部 API
   适合快速建立项目全貌，聚焦主要组件、数据流与外部依赖
 
 - **选项 B：文件级细节（40+ 个节点）**
-  在 A 基础上继续生成：类/接口 → 方法 → 表
+  在 A 基础上继续生成：- File 、Class 、Interface 、Function 、Method 、 Variable / Constant 、 Enum / TypeAlias 、Table 、 Endpoint（若可推导） 、TestCase（若可推导） 、 ConfigRation
   适合深度代码导航与知识检索
 
 > 用户选择写入顶层文件 `type` 字段，整个会话保持一致。
@@ -161,6 +161,17 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
           "$VAULT_PATH/10-19 Projects/NN {项目名}/02 Delete"
 ```
 
+**扫描完成后，立即使用 TaskCreate 工具创建任务列表：**
+
+- 第一个任务：`目录 — NN.00 {项目名}.md`（顶层文件）
+- 后续每个**子系统 / 模块**创建一个独立任务，任务名格式：`{模块名} — NN.MM {名称} 及其下属文件`
+  - description 中列出该模块下所有待生成的 MD 文件名
+- 所有任务初始状态为 `pending`
+
+任务粒度规则：
+- 选项 A（高层系统）：每个 Directory/Module 节点一个任务
+- 选项 B（文件级细节）：每个 Directory/Module 节点一个任务（该任务包含其下所有 Class/Function/Table 的 MD 文件）
+
 ---
 
 ### 阶段 5：核心动作执行
@@ -176,7 +187,12 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 
 4. **标签推断**：参见 @obsidian-sync-spec 中的**标签推断规则**，自动生成 2–5 个标签。
 
-5. **不展示创建md细节**：每次创建md文件，不需要向用户展示创建内容，只需要生成md文件即可
+5. **任务驱动的生成流程**：按以下步骤逐任务执行：
+   1. 用 `TaskUpdate` 将当前任务设为 `in_progress`
+   2. 生成该任务对应的所有 MD 文件（顶层文件 或 该模块下全部子层级文件）
+   3. 全部写入完成后，用 `TaskUpdate` 将该任务设为 `completed`
+   4. 取下一个 `pending` 任务，重复上述步骤
+   5. 不展示单个 MD 文件的内容，只通过 Task 状态体现进度
 ---
 
 #### 动作 B：更新描述与技术栈
@@ -219,10 +235,10 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 
 读取 `VAULT_PATH/10-19 Projects/NN {项目名}/NN.00 {项目名}.md` 的 YAML `type` 字段：
 
-| type 值 | 对应规则 | 更新范围 |
-|---------|---------|---------|
-| `A-高层系统` | 阶段 4 选项 A | 仅处理层级 1–4（项目 → 模块 → 子系统 → 外部依赖） |
-| `B-文件级细节` | 阶段 4 选项 B | 处理全部层级 1–7 |
+| type 值 | 对应规则 | 更新范围                                                                                                                                                                     |
+|---------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `A-高层系统` | 阶段 4 选项 A | 仅处理层级节点 Repository 、Directory / Module；例如（项目 → 模块 → 子系统 → 外部依赖）                                                                                                          |
+| `B-文件级细节` | 阶段 4 选项 B | 处理全部层级节点 Repository 、Directory、 File 、Class 、Interface 、Function 、Method 、 Variable / Constant 、 Enum / TypeAlias 、Table 、 Endpoint（若可推导） 、TestCase（若可推导） 、 ConfigRation |
 
 > **异常处理：**
 > - 文件不存在 → 停止执行，提示用户先运行动作 A 完成首次同步
@@ -287,27 +303,21 @@ mkdir -p "$VAULT_PATH/10-19 Projects/NN {项目名}/01 DailyLog" \
 
 ## 阶段 6：结果汇报
 
+所有任务完成后，输出简短汇报：
+
 ```
 ## Obsidian 同步完成
 
 **项目：** {name}（{jd-id}）
 **仓库路径：** 10-19 Projects/NN {项目名}/
-
-**已执行操作：**
-- [x] 操作1
-- [x] 操作2
-- [x] 操作3
-
-**生成/更新文件列表：**
-- NN.00 {项目名}.md（顶层）
-- NN.01 {模块1}.md
-- NN.01.01 {服务1}.md
-- ...（完整列表）
+**共生成文件：** {N} 个 MD 文件
 
 **需要手动处理的事项：**
 - {已移入 02 Delete/ 的归档文件}
-- {其他需人工介入的事项}
+- {其他需人工介入的事项}（若无则省略）
 ```
+
+进度详情已通过 Task 列表体现，不再重复列出文件清单。
 
 ---
 
